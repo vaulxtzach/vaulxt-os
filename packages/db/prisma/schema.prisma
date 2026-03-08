@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum WorkspaceStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum LeadType {
+  DEBT
+  TAX
+  UNKNOWN
+}
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  status    WorkspaceStatus @default(ACTIVE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users     WorkspaceUser[]
+  leads     Lead[]
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  status    UserStatus @default(ACTIVE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workspaces WorkspaceUser[]
+}
+
+model WorkspaceUser {
+  id          String @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        String
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@unique([workspaceId, userId])
+}
+
+model Lead {
+  id               String   @id @default(cuid())
+  workspaceId      String
+  leadType         LeadType @default(UNKNOWN)
+
+  firstName        String?
+  lastName         String?
+
+  phone            String?
+  normalizedPhone  String?
+
+  email            String?
+
+  state            String?
+
+  debtAmount       Float?
+  taxAmount        Float?
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+}
